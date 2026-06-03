@@ -1,0 +1,29 @@
+[project]
+name = "stratos-ai"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "sqlalchemy>=2.0",
+    "psycopg[binary]",
+    "pgvector",
+    "pydantic>=2",
+    "python-jose[cryptography]",
+    "passlib[bcrypt]",
+    "anthropic",
+    "python-dotenv",
+    "pypdf",
+    "tiktoken",
+    "python-multipart",
+    "pydantic-settings",
+    "email-validator",
+    "bcrypt==4.0.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-cov", "httpx"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

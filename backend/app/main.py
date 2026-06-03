@@ -69,3 +69,7 @@ def health():
 
 from app.api.auth import router as auth_router
 app.include_router(auth_router)
+from app.api.workspaces import router as workspaces_router
+from app.api.documents import router as documents_router
+app.include_router(workspaces_router)
+app.include_router(documents_router)
