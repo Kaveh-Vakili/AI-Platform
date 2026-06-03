@@ -30,7 +30,6 @@ def get_db():
 
 
 def _wire_monitoring() -> None:
-    """Point the monitoring persistence hooks at real DB writers."""
     from app.monitoring import persistence
     from app.models import HallucinationCheck, TokenUsageLog
 
@@ -57,7 +56,6 @@ app.add_middleware(
 
 @app.on_event("startup")
 def on_startup():
-    # In real life use Alembic migrations instead of create_all.
     Base.metadata.create_all(bind=engine)
     _wire_monitoring()
     import app.agents.core_agents  # noqa: F401
@@ -67,3 +65,7 @@ def on_startup():
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+from app.api.auth import router as auth_router
+app.include_router(auth_router)
