@@ -59,33 +59,6 @@ STRATOS AI is a full-stack platform where users upload business documents, ask g
 
 ---
 
-## Architecture
-
-
-
-┌─────────────────────────────────────────────────┐
-│ Frontend (React/TS — Phase 5)                    │
-└───────────────┬─────────────────────────────────┘
-│ REST + JWT
-┌───────────────▼─────────────────────────────────┐
-│ FastAPI Backend                                  │
-│  /auth  /workspaces  /documents  /chat           │
-│  /workflows  /monitoring  /audit (Phase 5)       │
-│                                                  │
-│  ┌─────── Agent Harness ───────────────────┐     │
-│  │ WorkflowEngine → AgentRegistry          │     │
-│  │ TokenLedger → HallucinationChecker      │     │
-│  └─────────────────────────────────────────┘     │
-└───┬──────────────┬──────────────┬───────────────┘
-│              │              │
-┌───▼───┐    ┌─────▼─────┐  ┌────▼────┐
-│Postgres│    │ pgvector  │  │ Uploads │
-│15 tables│   │ embeddings│  │  /local │
-└────────┘    └───────────┘  └─────────┘
-
-
----
-
 ## Agent Harness
 
 The harness turns a declarative workflow template into an executed, logged run.
@@ -250,24 +223,3 @@ ALTER TABLE document_chunks ADD COLUMN IF NOT EXISTS embedding vector(1536);
 
 ---
 
-
-
-## Project Structure
-
-AI-Platform/
-├─ backend/
-│  ├─ app/
-│  │  ├─ agents/          # BaseAgent, registry, core agents, control agent
-│  │  ├─ api/             # auth, workspaces, documents, chat routers
-│  │  ├─ core/            # config, security (JWT + bcrypt)
-│  │  ├─ monitoring/      # token logger, hallucination checker, persistence hooks
-│  │  ├─ rag/             # embeddings, retrieval, RAG pipeline
-│  │  ├─ services/        # document parsing and chunking service
-│  │  ├─ workflow/        # engine, templates
-│  │  ├─ models.py        # all 15 SQLAlchemy tables
-│  │  └─ main.py          # FastAPI app entry point
-│  ├─ tests/              # 9 passing tests (FakeLLM, FakeRepo)
-│  └─ pyproject.toml
-├─ docs/
-│  └─ STRATOS_AI_BUILD_PLAN.md
-└─ README.md
