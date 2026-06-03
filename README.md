@@ -1,8 +1,4 @@
-cd /Users/kavehvakili/Documents/STRATOS/AI-Platform
-python3 - << 'PYEOF'
-content = '''# STRATOS AI
-
-> A governed, document-grounded AI briefing and agent orchestration platform.
+ A governed, document-grounded AI briefing and agent orchestration platform.
 
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.136-green)
