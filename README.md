@@ -250,15 +250,7 @@ ALTER TABLE document_chunks ADD COLUMN IF NOT EXISTS embedding vector(1536);
 
 ---
 
-## Resume Bullets
 
-> Built STRATOS AI, a full-stack governed agent-orchestration platform (React/TypeScript + FastAPI/PostgreSQL + pgvector RAG) that executes multi-agent document-briefing workflows with per-run token/cost accounting and a dedicated hallucination-control agent that scores source alignment and flags unsupported claims before output ships.
-
-> Designed and implemented an agent harness and workflow engine that registers typed agents, executes declarative workflow templates with persisted per-step state, supports human-approval checkpoints and resumable runs, and emits a full audit trail for every execution.
-
-> Engineered an end-to-end RAG pipeline (chunking → embeddings → pgvector retrieval → citation validation) with claim-to-source alignment scoring, exposing token-cost and hallucination-risk data on every generated output.
-
----
 
 ## Project Structure
 
