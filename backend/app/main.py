@@ -82,3 +82,6 @@ app.include_router(workflows_router)
 
 from app.api.monitoring import router as monitoring_router
 app.include_router(monitoring_router)
+
+from app.api.outputs import router as outputs_router
+app.include_router(outputs_router)
