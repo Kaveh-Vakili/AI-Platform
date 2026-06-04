@@ -76,3 +76,6 @@ app.include_router(documents_router)
 
 from app.api.chat import router as chat_router
 app.include_router(chat_router)
+
+from app.api.workflows import router as workflows_router
+app.include_router(workflows_router)

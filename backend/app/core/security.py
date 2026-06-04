@@ -31,6 +31,7 @@ def create_access_token(subject: str) -> str:
 
 
 def decode_token(token: str) -> str:
+    """Returns the subject (user id) or raises JWTError."""
     payload = jwt.decode(
         token, settings.secret_key, algorithms=[settings.algorithm]
     )

@@ -15,6 +15,8 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 bearer = HTTPBearer()
 
 
+# ---- schemas ----
+
 class RegisterIn(BaseModel):
     email: EmailStr
     password: str
@@ -36,6 +38,8 @@ class UserOut(BaseModel):
     role: str
 
 
+# ---- dependency ----
+
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(bearer),
     db: Session = Depends(get_db),
@@ -52,6 +56,8 @@ def get_current_user(
                             detail="User not found")
     return user
 
+
+# ---- endpoints ----
 
 @router.post("/register", response_model=UserOut, status_code=201)
 def register(body: RegisterIn, db: Session = Depends(get_db)):

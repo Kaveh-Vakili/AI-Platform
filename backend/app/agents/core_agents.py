@@ -6,7 +6,7 @@ from __future__ import annotations
 from app.agents.base import AgentResult, BaseAgent, RetrievedChunk
 from app.agents.registry import register_agent
 
-SONNET = "claude-sonnet-4-20250514"
+SONNET = "claude-haiku-4-5-20251001"
 
 
 @register_agent

@@ -16,7 +16,7 @@ from app.monitoring import persistence
 from app.monitoring.hallucination import check_output
 from app.monitoring.token_logger import estimate_cost
 
-SONNET = "claude-sonnet-4-20250514"
+SONNET = "claude-haiku-4-5-20251001"
 
 MAX_CONTEXT_TOKENS = 60_000
 MAX_CHUNK_TOKENS = 1_200
