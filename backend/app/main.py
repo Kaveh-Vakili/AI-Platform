@@ -79,3 +79,6 @@ app.include_router(chat_router)
 
 from app.api.workflows import router as workflows_router
 app.include_router(workflows_router)
+
+from app.api.monitoring import router as monitoring_router
+app.include_router(monitoring_router)
