@@ -49,8 +49,10 @@ def _wire_monitoring() -> None:
 
 app = FastAPI(title="STRATOS AI", version="0.1.0")
 app.add_middleware(
-    CORSMiddleware, allow_origins=["http://localhost:5173"],
-    allow_methods=["*"], allow_headers=["*"], allow_credentials=True,
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
