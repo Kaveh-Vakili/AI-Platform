@@ -1,7 +1,10 @@
 """RAG pipeline: embed chunks after upload, answer questions."""
 from __future__ import annotations
 
+import json
 import os
+from collections.abc import Generator
+
 import anthropic
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -82,3 +85,38 @@ def rag_answer(
         ],
         "tokens_used": response.usage.input_tokens + response.usage.output_tokens,
     }
+
+
+def rag_answer_stream(
+    query: str,
+    workspace_id: str,
+    db: Session,
+) -> Generator[str, None, None]:
+    """Yield SSE-formatted strings for a streaming RAG answer."""
+    chunks = retrieve_chunks(query, workspace_id, db)
+
+    if not chunks:
+        yield f'data: {json.dumps({"type": "done", "citations": [], "tokens_used": 0})}\n\n'
+        return
+
+    sources = "\n\n".join(f"[{c['chunk_id']}] {c['content']}" for c in chunks)
+    citations = [
+        {"chunk_id": c["chunk_id"], "filename": c["source"]["filename"], "score": c["score"]}
+        for c in chunks
+    ]
+
+    with claude.messages.stream(
+        model=CHAT_MODEL,
+        max_tokens=1024,
+        system=SYSTEM,
+        messages=[{
+            "role": "user",
+            "content": f"Sources:\n{sources}\n\nQuestion: {query}",
+        }],
+    ) as stream:
+        for text_delta in stream.text_stream:
+            yield f'data: {json.dumps({"type": "token", "text": text_delta})}\n\n'
+        final = stream.get_final_message()
+        tokens_used = final.usage.input_tokens + final.usage.output_tokens
+
+    yield f'data: {json.dumps({"type": "done", "citations": citations, "tokens_used": tokens_used})}\n\n'

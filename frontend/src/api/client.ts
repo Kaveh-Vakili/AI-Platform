@@ -65,6 +65,69 @@ export const sendMessage = (workspaceId: string, message: string) =>
     .post(`/workspaces/${workspaceId}/chat`, { message })
     .then((r) => r.data);
 
+export interface Citation {
+  chunk_id: string;
+  filename: string;
+  score: number;
+}
+
+interface TokenEvent { type: "token"; text: string }
+interface DoneEvent  { type: "done"; citations: Citation[]; tokens_used: number }
+type SSEEvent = TokenEvent | DoneEvent;
+
+export function sendMessageStream(
+  workspaceId: string,
+  message: string,
+  onToken: (text: string) => void,
+  onDone: (data: { citations: Citation[]; tokens_used: number }) => void,
+  onError: (err: Error) => void,
+): void {
+  const token = localStorage.getItem("token");
+  fetch(`http://localhost:8000/workspaces/${workspaceId}/chat/stream`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ message }),
+  })
+    .then(async (res) => {
+      if (res.status === 401) {
+        localStorage.removeItem("token");
+        window.location.href = "/login";
+        return;
+      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.body) throw new Error("No response body");
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop() ?? "";
+
+        for (const part of parts) {
+          const line = part.trim();
+          if (!line.startsWith("data: ")) continue;
+          const data = line.slice(6);
+          if (!data) continue;
+          try {
+            const event = JSON.parse(data) as SSEEvent;
+            if (event.type === "token") onToken(event.text);
+            else if (event.type === "done") onDone({ citations: event.citations, tokens_used: event.tokens_used });
+          } catch { /* ignore malformed frame */ }
+        }
+      }
+    })
+    .catch(onError);
+}
+
 // --- Workflows ---
 export const getTemplates = () =>
   api.get("/workflows/templates").then((r) => r.data);

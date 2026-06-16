@@ -1,10 +1,11 @@
-import { useState } from "react";
-import { sendMessage } from "../api/client";
+import { useState, useRef, useEffect } from "react";
+import { sendMessageStream } from "../api/client";
+import type { Citation } from "../api/client";
 
 interface Message {
   role: "user" | "ai";
   text: string;
-  citations?: { chunk_id: string; filename: string; score: number }[];
+  citations?: Citation[];
   tokens?: number;
 }
 
@@ -16,33 +17,57 @@ export default function Chat({ workspaceId }: { workspaceId: string }) {
     },
   ]);
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [streaming, setStreaming] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
-  const send = async () => {
-    if (!input.trim() || loading) return;
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "auto" });
+  }, [messages]);
+
+  const send = () => {
+    if (!input.trim() || streaming) return;
     const question = input.trim();
     setInput("");
-    setMessages((m) => [...m, { role: "user", text: question }]);
-    setLoading(true);
-    try {
-      const data = await sendMessage(workspaceId, question);
-      setMessages((m) => [
-        ...m,
-        {
-          role: "ai",
-          text: data.answer,
-          citations: data.citations,
-          tokens: data.tokens_used,
-        },
-      ]);
-    } catch {
-      setMessages((m) => [
-        ...m,
-        { role: "ai", text: "Something went wrong. Please try again." },
-      ]);
-    } finally {
-      setLoading(false);
-    }
+
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", text: question },
+      { role: "ai", text: "" },
+    ]);
+    setStreaming(true);
+
+    sendMessageStream(
+      workspaceId,
+      question,
+      (token) => {
+        setMessages((prev) => {
+          const msgs = [...prev];
+          const last = msgs[msgs.length - 1];
+          msgs[msgs.length - 1] = { ...last, text: last.text + token };
+          return msgs;
+        });
+      },
+      ({ citations, tokens_used }) => {
+        setMessages((prev) => {
+          const msgs = [...prev];
+          const last = msgs[msgs.length - 1];
+          msgs[msgs.length - 1] = { ...last, citations, tokens: tokens_used };
+          return msgs;
+        });
+        setStreaming(false);
+      },
+      () => {
+        setMessages((prev) => {
+          const msgs = [...prev];
+          msgs[msgs.length - 1] = {
+            ...msgs[msgs.length - 1],
+            text: "Something went wrong. Please try again.",
+          };
+          return msgs;
+        });
+        setStreaming(false);
+      },
+    );
   };
 
   return (
@@ -62,7 +87,7 @@ export default function Chat({ workspaceId }: { workspaceId: string }) {
               </div>
               <div style={s.bubbleWrap}>
                 <div style={{ ...s.bubble, ...(m.role === "user" ? s.bubbleUser : s.bubbleAi) }}>
-                  {m.text}
+                  {m.text || (streaming && i === messages.length - 1 ? <span style={s.cursor}>▌</span> : "")}
                 </div>
                 {m.citations && m.citations.length > 0 && (
                   <div style={s.citations}>
@@ -73,18 +98,13 @@ export default function Chat({ workspaceId }: { workspaceId: string }) {
                     ))}
                   </div>
                 )}
-                {m.tokens && (
+                {m.tokens !== undefined && (
                   <div style={s.tokenCount}>{m.tokens} tokens</div>
                 )}
               </div>
             </div>
           ))}
-          {loading && (
-            <div style={s.row}>
-              <div style={{ ...s.avatar, ...s.avatarAi }}>AI</div>
-              <div style={{ ...s.bubble, ...s.bubbleAi }}>Thinking...</div>
-            </div>
-          )}
+          <div ref={bottomRef} />
         </div>
         <div style={s.inputRow}>
           <input
@@ -93,9 +113,10 @@ export default function Chat({ workspaceId }: { workspaceId: string }) {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && send()}
             placeholder="Ask a question about your documents..."
+            disabled={streaming}
           />
-          <button style={s.btn} onClick={send} disabled={loading}>
-            Send
+          <button style={{ ...s.btn, opacity: streaming ? 0.6 : 1 }} onClick={send} disabled={streaming}>
+            {streaming ? "…" : "Send"}
           </button>
         </div>
       </div>
@@ -127,7 +148,7 @@ const s: Record<string, React.CSSProperties> = {
   avatarUser: { background: "#1A4FA0", color: "#fff" },
   avatarAi: { background: "#E3EDFC", color: "#1A4FA0", border: "1px solid #C8D9F0" },
   bubbleWrap: { display: "flex", flexDirection: "column", gap: 6, maxWidth: "80%" },
-  bubble: { padding: "11px 15px", borderRadius: 16, fontSize: 13, lineHeight: 1.65 },
+  bubble: { padding: "11px 15px", borderRadius: 16, fontSize: 13, lineHeight: 1.65, whiteSpace: "pre-wrap" },
   bubbleUser: {
     background: "#1A4FA0", color: "#fff",
     borderRadius: "16px 16px 4px 16px",
@@ -136,7 +157,9 @@ const s: Record<string, React.CSSProperties> = {
     background: "#fff", color: "#1A3A6E",
     border: "1px solid #D4E4F7",
     borderRadius: "16px 16px 16px 4px",
+    minHeight: 40,
   },
+  cursor: { display: "inline-block", color: "#1A4FA0", animation: "none" },
   citations: { display: "flex", flexWrap: "wrap", gap: 6 },
   cite: {
     fontSize: 11, background: "#E3EDFC", border: "1px solid #C8D9F0",
@@ -152,5 +175,6 @@ const s: Record<string, React.CSSProperties> = {
   btn: {
     padding: "11px 20px", background: "#1A4FA0", color: "#fff",
     border: "none", borderRadius: 14, fontSize: 13, fontWeight: 500,
+    cursor: "pointer",
   },
 };
